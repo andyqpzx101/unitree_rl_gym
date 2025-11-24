@@ -98,7 +98,7 @@ class H1RoughCfg( LeggedRobotCfg ):
             contact_no_vel = -0.2
             feet_swing_height = -20.0
             contact = 0.18
-            arm_swing = 0.5
+            arm_swing = 0.5 #手臂摆動
 
 class H1RoughCfgPPO( LeggedRobotCfgPPO ):
     class policy:

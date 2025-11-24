@@ -123,17 +123,46 @@ class H1Robot(LeggedRobot):
         return torch.sum(torch.square(self.dof_pos[:,[0,1,5,6]]), dim=1)
     
     def _reward_arm_swing(self):
-        """挥手奖励 - 鼓励手臂自然摆动"""
-        # 手臂关节索引
+    # 手臂关节索引（根据你的配置）
         left_shoulder_pitch = 11  # left_shoulder_pitch_joint
+        left_shoulder_roll = 12   # left_shoulder_roll_joint  
+        left_shoulder_yaw = 13    # left_shoulder_yaw_joint
+        left_elbow = 14           # left_elbow_joint
+    
         right_shoulder_pitch = 15 # right_shoulder_pitch_joint
+        right_shoulder_roll = 16  # right_shoulder_roll_joint
+        right_shoulder_yaw = 17   # right_shoulder_yaw_joint
+        right_elbow = 18          # right_elbow_joint
     
-        # 期望的肩部前后摆动
-        desired_left = 0.2 * torch.sin(2 * torch.pi * self.phase)
-        desired_right = 0.2 * torch.sin(2 * torch.pi * (self.phase + 0.5))
+    # 使用步行相位，但手臂可以有相位差
+        arm_phase_left = self.phase
+        arm_phase_right = (self.phase + 0.5) % 1.0  # 与左臂反相
     
-        # 计算误差
-        left_error = torch.square(self.dof_pos[:, left_shoulder_pitch] - desired_left)
-        right_error = torch.square(self.dof_pos[:, right_shoulder_pitch] - desired_right)
+    # 期望的手臂运动模式 - 自然的挥手动作
+    # 肩部前后摆动（pitch）是主要的挥手动作
+        desired_left_shoulder_pitch = 0.3 * torch.sin(2 * torch.pi * arm_phase_left)
+        desired_right_shoulder_pitch = 0.3 * torch.sin(2 * torch.pi * arm_phase_right)
     
-        return -(left_error + right_error)
+    # 肘部轻微弯曲配合
+        desired_left_elbow = 0.1 * torch.sin(2 * torch.pi * arm_phase_left + 0.5)
+        desired_right_elbow = 0.1 * torch.sin(2 * torch.pi * arm_phase_right + 0.5)
+    
+    # 计算误差
+        left_shoulder_pitch_error = torch.square(
+        self.dof_pos[:, left_shoulder_pitch] - desired_left_shoulder_pitch
+        )
+        right_shoulder_pitch_error = torch.square(
+        self.dof_pos[:, right_shoulder_pitch] - desired_right_shoulder_pitch
+        )
+        left_elbow_error = torch.square(
+        self.dof_pos[:, left_elbow] - desired_left_elbow
+        )
+        right_elbow_error = torch.square(
+        self.dof_pos[:, right_elbow] - desired_right_elbow
+        )
+    
+    # 总误差
+        total_error = (left_shoulder_pitch_error + right_shoulder_pitch_error + 
+                    left_elbow_error + right_elbow_error)
+    
+        return -total_error  # 返回负误差作为奖励
