@@ -122,3 +122,18 @@ class H1Robot(LeggedRobot):
     def _reward_hip_pos(self):
         return torch.sum(torch.square(self.dof_pos[:,[0,1,5,6]]), dim=1)
     
+    def _reward_arm_swing(self):
+        """挥手奖励 - 鼓励手臂自然摆动"""
+        # 手臂关节索引
+        left_shoulder_pitch = 11  # left_shoulder_pitch_joint
+        right_shoulder_pitch = 15 # right_shoulder_pitch_joint
+    
+        # 期望的肩部前后摆动
+        desired_left = 0.2 * torch.sin(2 * torch.pi * self.phase)
+        desired_right = 0.2 * torch.sin(2 * torch.pi * (self.phase + 0.5))
+    
+        # 计算误差
+        left_error = torch.square(self.dof_pos[:, left_shoulder_pitch] - desired_left)
+        right_error = torch.square(self.dof_pos[:, right_shoulder_pitch] - desired_right)
+    
+        return -(left_error + right_error)
